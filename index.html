@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ominous Nebula</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #2a3b5c;
+            font-family: 'Rajdhani', sans-serif;
+            color: #fff;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* High-Tech HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 70%, rgba(0, 20, 40, 0.4) 100%);
+        }
+
+        .hud-element {
+            position: absolute;
+            background: rgba(0, 15, 30, 0.7);
+            border: 1px solid #00f0ff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3), inset 0 0 10px rgba(0, 240, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 15px 30px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+
+        #top-left-hud {
+            top: 30px;
+            left: 40px;
+        }
+
+        #top-right-hud {
+            top: 30px;
+            right: 40px;
+            border-color: #ff0055;
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.3), inset 0 0 10px rgba(255, 0, 85, 0.2);
+        }
+
+        .hud-label {
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #88aadd;
+            margin-bottom: 5px;
+        }
+
+        #top-right-hud .hud-label { color: #dd88a0; }
+
+        .hud-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #00f0ff;
+            text-shadow: 0 0 15px #00f0ff;
+        }
+
+        #top-right-hud .hud-value {
+            color: #ff0055;
+            text-shadow: 0 0 15px #ff0055;
+        }
+
+        /* Screens */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .screen {
+            background: rgba(5, 10, 20, 0.9);
+            border: 1px solid #00f0ff;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+            padding: 50px;
+            text-align: center;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            clip-path: polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px);
+            transition: opacity 0.4s, transform 0.4s;
+            max-width: 600px;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+            pointer-events: none;
+            position: absolute;
+            visibility: hidden;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin: 0 0 10px 0;
+            color: #fff;
+            text-shadow: 0 0 20px #00f0ff;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #aaccff;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: transparent;
+            color: #00f0ff;
+            border: 1px solid #00f0ff;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        }
+
+        .btn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            text-shadow: 0 0 10px #00f0ff;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .key {
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            padding: 5px 15px;
+            color: #00f0ff;
+            font-size: 1rem;
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        /* Scanlines overlay */
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+    </style>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="game-container"></div>
+    <div class="scanlines"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-element" id="top-left-hud">
+            <div class="hud-label">SYSTEM SCORE</div>
+            <div class="hud-value" id="score-val">00000</div>
+        </div>
+        <div class="hud-element" id="top-right-hud">
+            <div class="hud-label">VELOCITY (MACH)</div>
+            <div class="hud-value" id="speed-val">1.00</div>
+        </div>
+    </div>
+
+    <!-- UI -->
+    <div id="ui-layer">
+        <!-- Menu -->
+        <div class="screen" id="start-screen">
+            <h1>OMINOUS<br>NEBULA</h1>
+            <p>High-speed atmospheric evasion protocol initiated. Dodge incoming structural hazards. Speed increases over time.</p>
+            <div class="controls">
+                <span class="key">AWSD / ARROWS</span>
+                <span class="key">MOUSE X-AXIS</span>
+            </div>
+            <button class="btn" id="start-btn" style="padding: 15px 50px; font-size: 1.5rem;">INITIATE LAUNCH</button>
+        </div>
+
+        <!-- Game Over -->
+        <div class="screen hidden" id="game-over-screen">
+            <h1 style="color: #ff0055; text-shadow: 0 0 20px #ff0055;">HULL BREACH</h1>
+            <p>Structural integrity compromised. Mission failed.</p>
+            <p style="font-size: 2rem; color: #fff;">FINAL SCORE: <span id="final-score" style="color: #00f0ff;">0</span></p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                <button class="btn" id="return-btn" style="border-color: #aaccff; color: #aaccff;">VOLTAR AO INÍCIO</button>
+                <button class="btn" id="continue-btn" style="border-color: #ff0055; color: #ff0055;">CONTINUAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Core Setup ---
+        let scene, camera, renderer;
+        let ship, shipHitbox;
+        let track, roadTexture;
+        let obstacles = [];
+        let engineParticles = [];
+        let starField;
+        // --- Game State ---
+        let gameState = 'start';
+        let score = 0;
+        let baseSpeed = 1.0;
+        let gameSpeed = 1.0;
+        let spawnTimer = 0;
+        let spawnRate = 50;
+        
+        // --- Constants & Dimensions ---
+        const TRACK_WIDTH = 20;
+        const TRACK_LENGTH = 300;
+        const SHIP_Y = 1.0; // Hover height
+        const MAX_X = (TRACK_WIDTH / 2) - 1.5;
+
+        // --- Controls ---
+        const keys = { left: false, right: false, up: false, down: false };
+        let mouseX = 0;
+        let useMouse = false;
+
+        // --- DOM ---
+        const scoreEl = document.getElementById('score-val');
+        const speedEl = document.getElementById('speed-val');
+        const finalScoreEl = document.getElementById('final-score');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+
+        function init() {
+            // 1. Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050a18);
+            scene.fog = new THREE.FogExp2(0x0a152d, 0.005); 
+
+            // 2. Camera setup
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4, 12);
+            camera.lookAt(0, 0, -20);
+
+            // 3. High-Quality Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('game-container').appendChild(renderer.domElement);
+
+            // 4. Lighting
+            setupLighting();
+
+            // 5. Environment & Entities
+            buildTrack();
+            buildShip();
+            createEnvironmentParticles();
+            createNebulaBackground();
+
+            // 6. Events
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('touchmove', onTouchMove, {passive: false});
+
+            document.getElementById('start-btn').addEventListener('click', startGame);
+            document.getElementById('return-btn').addEventListener('click', returnToMenu);
+            document.getElementById('continue-btn').addEventListener('click', continueGame);
+
+            // 7. Loop
+            animate();
+        }
+
+        function setupLighting() {
+            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xaaccff, 1.8);
+            dirLight.position.set(-20, 50, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 150;
+            dirLight.shadow.camera.left = -30;
+            dirLight.shadow.camera.right = 30;
+            dirLight.shadow.camera.top = 50;
+            dirLight.shadow.camera.bottom = -50;
+            dirLight.shadow.bias = -0.001;
+            scene.add(dirLight);
+
+            const cyanLight = new THREE.PointLight(0x00f0ff, 1, 50);
+            cyanLight.position.set(15, 5, -20);
+            scene.add(cyanLight);
+
+            const pinkLight = new THREE.PointLight(0xff0055, 1, 50);
+            pinkLight.position.set(-15, 5, -20);
+            scene.add(pinkLight);
+        }
+
+        function buildTrack() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#050508';
+            ctx.fillRect(0, 0, 1024, 1024);
+            
+            ctx.strokeStyle = '#112233';
+            ctx.lineWidth = 4;
+            for(let i=0; i<1024; i+=64) {
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1024, i); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 1024); ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 12;
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 20;
+            ctx.setLineDash([80, 80]);
+            ctx.beginPath();
+            ctx.moveTo(512, 0);
+            ctx.lineTo(512, 1024);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#ff0055';
+            ctx.shadowColor = '#ff0055';
+            ctx.lineWidth = 15;
+            ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(20, 1024); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(1004, 0); ctx.lineTo(1004, 1024); ctx.stroke();
+
+            roadTexture = new THREE.CanvasTexture(canvas);
+            roadTexture.wrapS = THREE.RepeatWrapping;
+            roadTexture.wrapT = THREE.RepeatWrapping;
+            roadTexture.repeat.set(1, TRACK_LENGTH / 20);
+
+            const trackGeo = new THREE.PlaneGeometry(TRACK_WIDTH, TRACK_LENGTH);
+            const trackMat = new THREE.MeshStandardMaterial({
+                map: roadTexture,
+                roughness: 0.2,
+                metalness: 0.6,
+                emissive: 0x111111
+            });
+
+            track = new THREE.Mesh(trackGeo, trackMat);
+            track.rotation.x = -Math.PI / 2;
+            track.position.z = -TRACK_LENGTH / 2 + 20;
+            track.receiveShadow = true;
+            scene.add(track);
+
+            const wallGeo = new THREE.BoxGeometry(1, 2, TRACK_LENGTH);
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.9, roughness: 0.1 });
+            
+            const leftWall = new THREE.Mesh(wallGeo, wallMat);
+            leftWall.position.set(-TRACK_WIDTH/2 - 0.5, 1, track.position.z);
+            leftWall.receiveShadow = true;
+            leftWall.castShadow = true;
+            scene.add(leftWall);
+
+            const rightWall = new THREE.Mesh(wallGeo, wallMat);
+            rightWall.position.set(TRACK_WIDTH/2 + 0.5, 1, track.position.z);
+            rightWall.receiveShadow = true;
+            rightWall.castShadow = true;
+            scene.add(rightWall);
+        }
+
+        function buildShip() {
+            ship = new THREE.Group();
+
+            // Materiais de alta qualidade para o modelo 3D complexo da nave
+            const hullPrimaryMat = new THREE.MeshStandardMaterial({ color: 0x181e29, metalness: 0.85, roughness: 0.2 });
+            const hullSecondaryMat = new THREE.MeshStandardMaterial({ color: 0x3a4863, metalness: 0.7, roughness: 0.3 });
+            const detailMetalMat = new THREE.MeshStandardMaterial({ color: 0x0f141d, metalness: 0.9, roughness: 0.1 });
+            const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x001122, metalness: 0.95, roughness: 0.05, clearcoat: 1.0, clearcoatRoughness: 0.1 });
+            const neonCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+            const neonPinkMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+
+            // 1. Corpo principal / Fuselagem aerodinâmica
+            const fuselageGeo = new THREE.ConeGeometry(0.75, 4.8, 16);
+            fuselageGeo.rotateX(Math.PI / 2);
+            const fuselage = new THREE.Mesh(fuselageGeo, hullPrimaryMat);
+            fuselage.scale.set(1.1, 0.75, 1.0);
+            fuselage.castShadow = true;
+            fuselage.receiveShadow = true;
+            ship.add(fuselage);
+
+            // Bico de precisão frontal
+            const noseTipGeo = new THREE.ConeGeometry(0.35, 1.8, 8);
+            noseTipGeo.rotateX(Math.PI / 2);
+            const noseTip = new THREE.Mesh(noseTipGeo, detailMetalMat);
+            noseTip.position.set(0, -0.05, -2.8);
+            noseTip.castShadow = true;
+            ship.add(noseTip);
+
+            // 2. Cockpit de Vidro Escuro 3D
+            const cockpitGeo = new THREE.SphereGeometry(0.42, 16, 16);
+            const cockpit = new THREE.Mesh(cockpitGeo, glassMat);
+            cockpit.scale.set(0.9, 0.8, 3.2);
+            cockpit.position.set(0, 0.38, -0.6);
+            ship.add(cockpit);
+
+            // Moldura neon em volta do cockpit
+            const cockpitFrameGeo = new THREE.TorusGeometry(0.43, 0.03, 8, 16);
+            cockpitFrameGeo.rotateX(Math.PI / 2);
+            const cockpitFrame = new THREE.Mesh(cockpitFrameGeo, neonCyanMat);
+            cockpitFrame.scale.set(0.9, 3.2, 0.8);
+            cockpitFrame.position.set(0, 0.35, -0.6);
+            ship.add(cockpitFrame);
+
+            // 3. Estrutura das Asas Duplas Futuristas (Estilo caça espacial)
+            const createWing = (isRight, isTop) => {
+                const wingGroup = new THREE.Group();
+                const side = isRight ? 1 : -1;
+                const vert = isTop ? 1 : -0.6;
+
+                // Placa principal da asa
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 0);
+                shape.lineTo(2.8, -1.2);
+                shape.lineTo(2.6, -2.4);
+                shape.lineTo(0, -1.6);
+                shape.lineTo(0, 0);
+
+                const extrudeSettings = { depth: 0.1, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
+                const wingGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                wingGeo.rotateX(Math.PI / 2);
+
+                const wingMesh = new THREE.Mesh(wingGeo, isTop ? hullPrimaryMat : hullSecondaryMat);
+                wingMesh.castShadow = true;
+                wingMesh.receiveShadow = true;
+                wingGroup.add(wingMesh);
+
+                // Canhão Laser na ponta da asa
+                const cannonGeo = new THREE.CylinderGeometry(0.06, 0.06, 2.2, 8);
+                cannonGeo.rotateX(Math.PI / 2);
+                const cannon = new THREE.Mesh(cannonGeo, detailMetalMat);
+                cannon.position.set(2.7, 0, -0.8);
+                cannon.castShadow = true;
+                wingGroup.add(cannon);
+
+                // Ponta do Canhão Brilhante
+                const laserTipGeo = new THREE.SphereGeometry(0.08, 8, 8);
+                const laserTip = new THREE.Mesh(laserTipGeo, neonPinkMat);
+                laserTip.position.set(2.7, 0, -1.9);
+                wingGroup.add(laserTip);
+
+                // Faixa de luz decorativa na asa
+                const stripeGeo = new THREE.BoxGeometry(2.2, 0.04, 0.1);
+                const stripe = new THREE.Mesh(stripeGeo, neonCyanMat);
+                stripe.position.set(1.4, 0.08, -1.2);
+                wingGroup.add(stripe);
+
+                // Posicionamento e inclinação tridimensional da asa
+                wingGroup.position.set(0, vert * 0.25, 0.2);
+                wingGroup.rotation.z = side * (isTop ? -0.15 : 0.25);
+                wingGroup.scale.x = side;
+
+                return wingGroup;
+            };
+
+            ship.add(createWing(true, true));   // Superior Direita
+            ship.add(createWing(false, true));  // Superior Esquerda
+            ship.add(createWing(true, false));  // Inferior Direita
+            ship.add(createWing(false, false)); // Inferior Esquerda
+
+            // 4. Propulsores Duplos Traseiros 3D com luzes volumétricas
+            const createEngine = (xPos) => {
+                const engineGroup = new THREE.Group();
+
+                // Turbina principal
+                const engineGeo = new THREE.CylinderGeometry(0.35, 0.45, 1.8, 16);
+                engineGeo.rotateX(Math.PI / 2);
+                const engineMesh = new THREE.Mesh(engineGeo, detailMetalMat);
+                engineMesh.castShadow = true;
+                engineGroup.add(engineMesh);
+
+                // Anel exterior de energia neon
+                const ringGeo = new THREE.TorusGeometry(0.4, 0.04, 8, 16);
+                const ring = new THREE.Mesh(ringGeo, neonCyanMat);
+                ring.position.set(0, 0, 0.4);
+                engineGroup.add(ring);
+
+                // Núcleo do motor piscante/brilhante
+                const glowGeo = new THREE.SphereGeometry(0.3, 16, 16);
+                const glow = new THREE.Mesh(glowGeo, neonCyanMat);
+                glow.position.set(0, 0, 0.85);
+                glow.name = xPos > 0 ? "thruster1" : "thruster2";
+                engineGroup.add(glow);
+
+                engineGroup.position.set(xPos, 0, 1.6);
+                return engineGroup;
+            };
+
+            ship.add(createEngine(1.15));
+            ship.add(createEngine(-1.15));
+
+            // Luz suave projetada pela nave na pista
+            const engineLight = new THREE.PointLight(0x00f0ff, 2.5, 15);
+            engineLight.position.set(0, 0.3, 2.5);
+            ship.add(engineLight);
+
+            ship.position.set(0, SHIP_Y, 0);
+            scene.add(ship);
+
+            shipHitbox = new THREE.Box3();
+        }
+
+        function createEnvironmentParticles() {
+            const geo = new THREE.BufferGeometry();
+            const count = 500;
+            const pos = new Float32Array(count * 3);
+            
+            for(let i=0; i<count*3; i+=3) {
+                pos[i] = (Math.random() - 0.5) * 60;
+                pos[i+1] = Math.random() * 20;
+                pos[i+2] = (Math.random() - 0.5) * TRACK_LENGTH;
+            }
+            
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.5 });
+            
+            const dust = new THREE.Points(geo, mat);
+            dust.name = "dust";
+            scene.add(dust);
+        }
+
+        function createNebulaBackground() {
+            // Criando um domo/campo de estrelas e nebulosa ao fundo inspirados em exemplos do Three.js
+            const starsGeo = new THREE.BufferGeometry();
+            const starsCount = 3000;
+            const positions = new Float32Array(starsCount * 3);
+            const colors = new Float32Array(starsCount * 3);
+
+            for (let i = 0; i < starsCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 600;
+                positions[i + 1] = (Math.random() - 0.5) * 600;
+                positions[i + 2] = (Math.random() - 0.5) * 600;
+
+                // Cores variadas para estrelas (tons azuis, roxos e ciano)
+                colors[i] = 0.5 + Math.random() * 0.5;
+                colors[i + 1] = 0.7 + Math.random() * 0.3;
+                colors[i + 2] = 1.0;
+            }
+
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            starsGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const starsMat = new THREE.PointsMaterial({
+                size: 1.2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            starField = new THREE.Points(starsGeo, starsMat);
+            scene.add(starField);
+
+            // Adiciona nuvens de nebulosas brilhantes ao fundo
+            const nebulaGroup = new THREE.Group();
+            const cloudGeo = new THREE.SphereGeometry(30, 16, 16);
+
+            const colorsNebula = [0x00f0ff, 0xff0055, 0x7700ff, 0x00ffaa];
+            for (let i = 0; i < 6; i++) {
+                const cloudMat = new THREE.MeshBasicMaterial({
+                    color: colorsNebula[i % colorsNebula.length],
+                    transparent: true,
+                    opacity: 0.12,
+                    wireframe: true
+                });
+                const cloud = new THREE.Mesh(cloudGeo, cloudMat);
+                cloud.position.set(
+                    (Math.random() - 0.5) * 200,
+                    10 + Math.random() * 50,
+                    -150 - Math.random() * 100
+                );
+                cloud.scale.set(1 + Math.random()*2, 1 + Math.random()*2, 1 + Math.random()*2);
+                nebulaGroup.add(cloud);
+            }
+            nebulaGroup.name = "nebulaClouds";
+            scene.add(nebulaGroup);
+        }
+
+        function spawnObstacle() {
+            const types = ['crystal', 'barricade', 'asteroid'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            let mesh;
+            
+            if (type === 'crystal') {
+                const geo = new THREE.TetrahedronGeometry(1.0 + Math.random() * 0.5, 0);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: 0xff0055,
+                    emissive: 0xff0055,
+                    emissiveIntensity: 0.6,
+                    roughness: 0.1,
+                    metalness: 0.8,
+                    flatShading: true
+                });
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.y = 1.0;
+                mesh.rotSpeed = {x: 0.05, y: 0.05, z: 0};
+                
+                const light = new THREE.PointLight(0xff0055, 1.5, 30);
+                mesh.add(light);
+                
+            } else if (type === 'barricade') {
+                const geo = new THREE.BoxGeometry(3, 1.5, 1.0);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.4 });
+                mesh = new THREE.Mesh(geo, mat);
+                
+                const stripGeo = new THREE.BoxGeometry(3.2, 0.2, 1.1);
+                const stripMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+                const strip = new THREE.Mesh(stripGeo, stripMat);
+                mesh.add(strip);
+
+                const light = new THREE.PointLight(0xffaa00, 1.5, 30);
+                mesh.add(light);
+
+                mesh.position.y = 0.75;
+                mesh.rotSpeed = {x: 0, y: 0, z: 0};
+                
+            } else {
+                const geo = new THREE.IcosahedronGeometry(1.0 + Math.random() * 0.5, 1);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: 0x00ffaa,
+                    emissive: 0x00ffaa,
+                    emissiveIntensity: 0.5,
+                    metalness: 0.8,
+                    roughness: 0.2,
+                    flatShading: true
+                });
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.position.y = 1.0;
+                mesh.rotSpeed = {x: Math.random()*0.05, y: Math.random()*0.05, z: Math.random()*0.05};
+
+                const light = new THREE.PointLight(0x00ffaa, 1.5, 30);
+                mesh.add(light);
+            }
+
+            const spawnX = (Math.random() - 0.5) * (TRACK_WIDTH - 6); 
+            mesh.position.set(spawnX, mesh.position.y, -150);
+            
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            mesh.hitbox = new THREE.Box3();
+            
+            scene.add(mesh);
+            obstacles.push(mesh);
+        }
+
+        function createEngineTrail() {
+            if(Math.random() > 0.3) return;
+
+            const geo = new THREE.BoxGeometry(0.1, 0.1, 0.5);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.8 });
+            
+            const p1 = new THREE.Mesh(geo, mat);
+            p1.position.set(ship.position.x + 1.2, ship.position.y, ship.position.z + 3);
+            scene.add(p1);
+
+            const p2 = new THREE.Mesh(geo, mat);
+            p2.position.set(ship.position.x - 1.2, ship.position.y, ship.position.z + 3);
+            scene.add(p2);
+
+            engineParticles.push(p1, p2);
+        }
+
+        // --- Game Logic ---
+        function startGame() {
+            score = 0;
+            baseSpeed = 1.0;
+            gameSpeed = 1.0;
+            spawnTimer = 0;
+            spawnRate = 50;
+            
+            scoreEl.innerText = '00000';
+            speedEl.innerText = '1.00';
+            
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+
+            ship.position.set(0, SHIP_Y, 0);
+            ship.rotation.set(0, 0, 0);
+            
+            obstacles.forEach(obs => {
+                scene.remove(obs);
+                obs.geometry.dispose();
+                obs.material.dispose();
+            });
+            obstacles = [];
+
+            engineParticles.forEach(p => {
+                scene.remove(p);
+                p.geometry.dispose();
+                p.material.dispose();
+            });
+            engineParticles = [];
+
+            gameState = 'playing';
+        }
+
+        function returnToMenu() {
+            gameOverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            gameState = 'start';
+        }
+
+        function continueGame() {
+            gameOverScreen.classList.add('hidden');
+            
+            // Remove os obstáculos que estão muito próximos da nave para você não bater instantaneamente
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                if (obs.position.z > -60) {
+                    scene.remove(obs);
+                    obs.geometry.dispose();
+                    obs.material.dispose();
+                    obstacles.splice(i, 1);
+                }
+            }
+            
+            // Centraliza a nave
+            ship.position.set(0, SHIP_Y, 0);
+            ship.rotation.set(0, 0, 0);
+            
+            // Restaura as cores originais da nave
+            ship.children.forEach(child => {
+                if(child.material && child.material.type === "MeshStandardMaterial") {
+                    if(child.geometry.type === "ConeGeometry" || child.geometry.type === "ExtrudeGeometry") child.material.color.setHex(0x1a1a1a);
+                }
+            });
+
+            gameState = 'playing';
+        }
+
+        function triggerGameOver() {
+            gameState = 'gameover';
+            
+            const flash = new THREE.PointLight(0xff0000, 5, 50);
+            flash.position.copy(ship.position);
+            scene.add(flash);
+            
+            ship.children.forEach(child => {
+                if(child.material && child.material.color) {
+                    child.material.color.setHex(0xff0000);
+                }
+            });
+
+            setTimeout(() => {
+                scene.remove(flash);
+                gameOverScreen.classList.remove('hidden');
+                finalScoreEl.innerText = Math.floor(score).toString().padStart(5, '0');
+            }, 800);
+        }
+
+        function updateShipMovement() {
+            const moveSpeed = 0.5;
+            const tiltMax = Math.PI / 3;
+            const tiltSpeed = 0.15;
+            
+            let targetX = ship.position.x;
+
+            if (useMouse) {
+                targetX = mouseX * MAX_X;
+                ship.position.x += (targetX - ship.position.x) * 0.15;
+            } else {
+                if ((keys.left || keys.a) && ship.position.x > -MAX_X) targetX -= moveSpeed;
+                if ((keys.right || keys.d) && ship.position.x < MAX_X) targetX += moveSpeed;
+                ship.position.x = targetX;
+            }
+
+            ship.position.x = Math.max(-MAX_X, Math.min(MAX_X, ship.position.x));
+
+            let diffX = targetX - ship.position.x;
+            if(!useMouse) diffX = ((keys.right||keys.d) ? 1 : ((keys.left||keys.a) ? -1 : 0));
+            
+            let targetRotZ = -diffX * (useMouse ? 0.5 : tiltMax);
+            
+            ship.rotation.z += (targetRotZ - ship.rotation.z) * tiltSpeed;
+            ship.position.y = SHIP_Y + Math.sin(Date.now() * 0.005) * 0.1;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotação sutil do fundo estrelado para dinamismo
+            if (starField) {
+                starField.rotation.z += 0.0003;
+                starField.rotation.y += 0.0001;
+            }
+
+            const nebulaClouds = scene.getObjectByName("nebulaClouds");
+            if (nebulaClouds) {
+                nebulaClouds.children.forEach(c => c.rotation.y += 0.002);
+            }
+
+            if (gameState === 'playing') {
+                if (roadTexture) {
+                    roadTexture.offset.y -= 0.05 * gameSpeed;
+                }
+
+                const dust = scene.getObjectByName("dust");
+                if (dust) {
+                    const positions = dust.geometry.attributes.position.array;
+                    for (let i = 2; i < positions.length; i += 3) {
+                        positions[i] += 1.0 * gameSpeed;
+                        if (positions[i] > 20) positions[i] = -TRACK_LENGTH + 50;
+                    }
+                    dust.geometry.attributes.position.needsUpdate = true;
+                }
+
+                updateShipMovement();
+                createEngineTrail();
+
+                const t1 = ship.getObjectByName("thruster1");
+                const t2 = ship.getObjectByName("thruster2");
+                if(t1 && t2) {
+                    const scale = 1 + Math.random() * 0.4;
+                    t1.scale.setScalar(scale);
+                    t2.scale.setScalar(scale);
+                }
+
+                shipHitbox.setFromObject(ship);
+                shipHitbox.expandByScalar(-0.3);
+
+                spawnTimer++;
+                if (spawnTimer >= spawnRate) {
+                    spawnObstacle();
+                    spawnTimer = 0;
+                }
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    
+                    obs.position.z += 2.0 * gameSpeed;
+                    
+                    obs.rotation.x += obs.rotSpeed.x;
+                    obs.rotation.y += obs.rotSpeed.y;
+                    obs.rotation.z += obs.rotSpeed.z;
+
+                    obs.hitbox.setFromObject(obs);
+                    obs.hitbox.expandByScalar(-0.2);
+
+                    if (shipHitbox.intersectsBox(obs.hitbox)) {
+                        triggerGameOver();
+                        break;
+                    }
+
+                    if (obs.position.z > 10) {
+                        scene.remove(obs);
+                        obstacles.splice(i, 1);
+                        score += 50;
+                    }
+                }
+
+                for (let i = engineParticles.length - 1; i >= 0; i--) {
+                    const p = engineParticles[i];
+                    p.position.z += 0.5;
+                    p.scale.multiplyScalar(0.9);
+                    p.material.opacity -= 0.05;
+                    if (p.material.opacity <= 0) {
+                        scene.remove(p);
+                        engineParticles.splice(i, 1);
+                    }
+                }
+
+                score += 0.2 * gameSpeed;
+                gameSpeed = baseSpeed + (score * 0.0005);
+                spawnRate = Math.max(15, 50 - (score * 0.005));
+
+                scoreEl.innerText = Math.floor(score).toString().padStart(5, '0');
+                speedEl.innerText = gameSpeed.toFixed(2);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onKeyDown(e) {
+            useMouse = false;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+        }
+
+        function onKeyUp(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+        }
+
+        function onMouseMove(e) {
+            if (gameState !== 'playing') return;
+            if (Math.abs(e.movementX) > 0) useMouse = true;
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+        }
+
+        function onTouchMove(e) {
+            if (gameState !== 'playing') return;
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                useMouse = true;
+                mouseX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
